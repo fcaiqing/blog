@@ -1,0 +1,38 @@
+{
+  "name": "react-jest",
+  "version": "1.0.0",
+  "description": "a demo of react component jest",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "author": "",
+  "license": "ISC",
+  "jest": {
+    "transform": {
+      "^.+\\.jsx?$": "babel-jest"
+    },
+    "unmockedModulePathPatterns": [
+      "node_modules/react",
+      "node_modules/react-dom",
+      "node_modules/react-addons-test-utils",
+      "node_modules/fbjs"
+    ]
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.4.5",
+    "@babel/preset-react": "^7.0.0",
+    "babel-core": "^6.26.3",
+    "babel-jest": "^24.8.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-react": "^6.24.1",
+    "classnames": "^2.2.6",
+    "jest": "^24.8.0",
+    "react": "^16.8.6",
+    "react-addons-test-utils": "^15.6.2",
+    "react-dom": "^16.8.6"
+  }
+}
