@@ -5,3 +5,6 @@
 
 ## Flux学习
 - [flux](./flux-notes)
+
+## vuex
+- [vuex学习笔记](https://github.com/fcaiqing/vuex-notes)
