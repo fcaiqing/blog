@@ -1,7 +1,7 @@
 # 目录
 ## JavaScript Unit Testing
-- [jasmine demo](https://github.com/fcaiqing/blog/tree/master/js-test/jasmine-demo)
-- [jest demo](https://github.com/fcaiqing/blog/tree/master/js-test/jest-demo)
+- [jasmine demo](https://github.com/fcaiqing/blog/tree/master/JavaScript-Unit-Testing/jasmine-demo)
+- [jest demo](https://github.com/fcaiqing/blog/tree/master/JavaScript-Unit-Testing/jest-demo)
 
 ## Flux
 - [flux学习](./flux-notes)
