@@ -8,3 +8,6 @@
 
 ## vuex
 - [vuex学习笔记](https://github.com/fcaiqing/vuex-notes)
+
+## 算法学习
+- [常见排序算法学习](https://github.com/fcaiqing/blog/tree/master/algorithm-notes/sort)
