@@ -6,7 +6,7 @@
   - [JavaScript单例模式](#JavaScript单例模式)
     - [常见解决变量污染](#常见解决变量污染)
   - [JavaScript中惰性单例模式](#JavaScript中惰性单例模式)
- 
+- [策略模式](#策略模式)
 ### 单例模式
 
 #### 常见实现
@@ -122,4 +122,120 @@ var executeOnce = getSingleTon(addOnce, true)
 executeOnce()
 executeOnce()
 executeOnce().getValue()    //1
+```
+### 策略模式
+---
+> 定义一系列的算法或行为，将它们一一分别封装，启动运行时根据业务类型执行不同行为或算法
+
+案例：设计一个发声系统，能够发出不通动物叫声
+1. 实现
+```JavaScript
+class Dog{
+    getVoice() {
+        console.log('汪汪')
+    }
+}
+class Cat{
+    getVoice() {
+        console.log('喵喵')
+    }
+}
+class Tiger{
+    getVoice() {
+        console.log('吼吼')
+    }
+}
+
+class VoiceSystem{
+    constructor(type) {
+        this.type = type
+    }
+    showVoice() {
+        let type = this.type
+        if (type == 'dog') {
+            new Dog().getVoice()
+        } else if (type == 'cat') {
+            new Cat().getVoice()
+        } else if (type == 'tiger') {
+            new Tiger().getVoice()
+        }
+    }
+}
+new VoiceSystem('dog').showVoice()  //汪汪
+new VoiceSystem('cat').showVoice()  //喵喵
+new VoiceSystem('tiger').showVoice()    //吼吼
+```
+上述实现缺点
+- 系统缺乏弹性，每次进行声音扩充都需要更新系统类，违反开放-封闭原则
+- 系统中由于集成很多模块导致系统庞大,比如系统中的shouVoice模块
+
+2. 基于策略模式实现
+> 设计模式一定是将可变部分和不可变部分进行分离，同样策略模式也是讲算法实现和使用分开，具体就是分为策略类和环境类，前者封装了各个算法实现，后者接受客户业务请求，然后把请求委托给策略对象
+```JavaScript
+//策略类
+class Dog{
+    getVoice() {
+        console.log('汪汪')
+    }
+}
+class Cat{
+    getVoice() {
+        console.log('喵喵')
+    }
+}
+class Tiger{
+    getVoice() {
+        console.log('吼吼')
+    }
+}
+//环境类
+class VoiceSystem{
+    constructor() {
+        this.strategy = null    //策略对象
+    }
+    setStrategy(strategy) {
+        this.strategy = strategy
+    }
+    showVoice() {
+        this.strategy.getVoice()
+    }
+}
+
+var sys1 = new VoiceSystem()
+sys1.setStrategy(new Cat()) //设置策略对象
+sys1.showVoice()    //喵喵
+
+var sys2 = new VoiceSystem()
+sys2.setStrategy(new Dog()) //设置策略对象
+sys2.showVoice()    //汪汪
+```
+3. JavaScript中的策略模式
+> JavaScript中一切都可以看做对象，因此可以直接定义策略对象和环境对象
+```JavaScript
+var strategy = {
+    dog: {
+        getVoice() {
+            console.log('汪汪')
+        }
+    },
+    cat: {
+        getVoice() {
+            console.log('喵喵')
+        }
+    },
+    tiger: {
+        getVoice() {
+            console.log('吼吼')
+        }
+    }
+}
+
+var voiceSystem = {
+    showVoice(type) {
+        strategy[type].getVoice()
+    }
+}
+voiceSystem.showVoice('cat')    //喵喵
+voiceSystem.showVoice('dog')    //汪汪
+
 ```
