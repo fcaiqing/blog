@@ -7,6 +7,10 @@
     - [常见解决变量污染](#常见解决变量污染)
   - [JavaScript中惰性单例模式](#JavaScript中惰性单例模式)
 - [策略模式](#策略模式)
+- [代理模式](#代理模式)
+- [迭代器模式](#迭代器模式)
+- [观察者模式](#观察者模式)
+- [命令模式](#命令模式)
 ### 单例模式
 
 #### 常见实现
@@ -238,4 +242,287 @@ var voiceSystem = {
 voiceSystem.showVoice('cat')    //喵喵
 voiceSystem.showVoice('dog')    //汪汪
 
+```
+### 代理模式
+> 使用代理对象进行占位，以便控制对本体的访问，客户——>代理对象——>本体
+
+#### 常见代理示例
+1. 模块延迟加载-代理对象和本体实现相同接口
+> Send.js模块提供了send方法，未加载时采用代理对象缓存任务，模块加载后再执行
+```JavaScript
+//代理对象
+var Send = (function() {
+    let _cache = []
+    function _loadSendModule(e) {
+        var script = document.createElement('script')
+        script.onload = function() {
+            _cache.forEach((fn) => {
+                fn()
+            })
+        }
+        script.src = 'send.js'
+        document.querySelector('head').appendChild(script)
+    }
+    document.body.addEventListener('click', _loadSendModule)
+    return {
+        send() {
+            let args = arguments
+            _cache.push(() => {
+                return Send.send.apply(Send, args)
+            })
+        }
+    }
+})()
+//Send.js
+Send = {
+    send(){
+        //......
+    }
+}
+
+```
+2. 合并请求
+> 通过代理对象执行请求，待操作结束后通过代理对象一次性发送请求，可以较少网络资源占用
+```JavaScript
+//本体
+var sendData = function(...args) {
+    console.log('保存id', args)
+}
+
+var proxySendData = (function() {
+    let _cache = [], timer = null
+    return function() {
+        [].push.apply(_cache, arguments)
+        if (timer) return 
+        timer = setTimeout(() => {
+            timer = null
+            _cache = []
+            sendData(..._cache)
+        }, 1000)
+    }
+})()
+```
+3. 缓存代理
+> 通过代理对象添加结果缓存
+
+### 迭代器模式
+> 提供一种方法顺序访问对象内各个元素而不需要暴露它的内部实现，比如Generator
+
+### 观察者模式
+> 又称发布订阅模式，描述了一种一对多的关系
+
+```JavaScript
+class Watcher {
+    constructor() {
+        this.clientList = {}
+    }
+    //添加订阅
+    listen(key, fn) {
+        if (!this.clientList[key]) {
+            this.clientList[key] = []
+        }
+        this.clientList[key].push(fn)
+    }
+    //移除订阅
+    remove(key, fn) {
+        let fns = this.clientList[key]
+        if (!fns || fns.length == 0) return false
+        if (!fn) {
+            fns && (fns.length = 0)
+        }else {
+           for (let i = 0; i < fns.length; i++) {
+               if (fn === fns[i]) {
+                   fns.splice(i, 1)
+               }
+           } 
+        }
+    }
+    publish(key) {
+        let fns = this.clientList[key]
+        Array.prototype.shift.call(arguments)
+        if (!fns || fns.length == 0) return false
+        for (let i = 0, fn; i < fns.length; i++) {
+            fn = fns[i++]
+            fn.apply(this, arguments)
+        }
+    }
+}
+
+class Shop extends Watcher {
+    constructor() {
+        super()
+        this.origin = 0
+    }
+    add() {
+         this.origin++
+    }
+    getOrigin() {
+        return this.origin
+    }
+}
+
+var shop = new Shop()
+
+shop.listen('xiaoming', function(num) {
+    console.log('origin 数量: ' + num)
+})
+shop.add()  //商店有水果了
+shop.publish('xiaoming', 20)
+//xiaoming 接受到信息
+//origin 数量: 20
+```
+> 使用同一个发布订阅对象，还可以实现两个相互独立的模块间的通信
+```JavaScript
+var watcher = new Watcher()
+var moduleA = (function() {
+    return {
+    num: 0,
+    addNum() {
+        this.num++
+        watcher.publish('moduleB', this.num)
+    }
+}
+})()
+var moduleB = (function() {
+    let _num = 0
+    watcher.listen('moduleB', function(num) {
+        _num = num
+    })
+    return {
+        log() {
+            console.log('获取来自moduleA的数据，num: ', _num)
+        }
+    }
+})()
+moduleA.addNum()
+moduleB.log()   //获取来自moduleA的数据，num:  1
+
+```
+### 命令模式
+> 当客人向餐厅服务员下单时，不必关心是哪位厨师去完成炒菜操作，只需向服务员下单就行。这里的服务员就是command对象，负责接收指令，而执行指令时command对象又会委托给设定好的执行者去执行。
+
+```JavaScript
+//button为点菜按钮，可以执行点菜命令
+var chef = {
+    cook() {
+        console.log('菜品制作完成')
+    }
+}
+var cookingCommand = function(receiver) {
+    return {
+        execute(){
+            receiver.cook()
+        }
+    }
+}
+var setCommand = function(button, commander) {
+    button.onclick = function() {
+        commander.execute()
+    }
+}
+setCommand(document.querySelector('button'), cookingCommand(chef))
+//菜品制作完成
+```
+#### 命令队列
+> 当请求命令较多时，可以通过命令队列保存命令，当前命令执行完后通知队列执行下一个命令
+```JavaScript
+var chef1 = {
+    id: 'chef1',
+    busy: false,
+    cook() {
+        let self = this
+        self.busy = true
+        setTimeout(() => {
+            console.log('chef1', '菜品制作完成')
+            self.busy = false
+            watcher.publish('chef1', 'chef1')
+        }, 1000)
+    }
+}
+var chef2 = {
+    id: 'chef2',
+    busy: false,
+    cook() {
+        let self = this
+        self.busy = true
+        setTimeout(() => {
+            console.log('chef2', '菜品制作完成')
+            self.busy = false
+            watcher.publish('chef2', 'chef2')
+        }, 2000)
+    }
+}
+var cookingCommand = function(receiver) {
+    return {
+        id: receiver.id,
+        busy: receiver.busy,
+        execute(){
+            receiver.cook()
+        }
+    }
+}
+var manageCommand = {
+    commandList: {chef1:[], chef2:[]},
+    execute(commander, id) {
+        if (!commander) {
+            this.commandList[id].length > 0 
+                && this.commandList[id].shift().execute()
+        }else {
+            if (commander.busy) {
+                var id = commander.id
+                this.commandList[id].push(commander)
+                return
+            }
+            commander.execute()
+        }
+    }
+}
+class Watcher {
+    constructor() {
+        this.clientList = {}
+    }
+    //添加订阅
+    listen(key, fn) {
+        if (!this.clientList[key]) {
+            this.clientList[key] = []
+        }
+        this.clientList[key].push(fn)
+    }
+    //移除订阅
+    remove(key, fn) {
+        let fns = this.clientList[key]
+        if (!fns || fns.length == 0) return false
+        if (!fn) {
+            fns && (fns.length = 0)
+        }else {
+           for (let i = 0; i < fns.length; i++) {
+               if (fn === fns[i]) {
+                   fns.splice(i, 1)
+               }
+           } 
+        }
+    }
+    publish(key) {
+        let fns = this.clientList[key]
+        Array.prototype.shift.call(arguments)
+        if (!fns || fns.length == 0) return false
+        for (let i = 0, fn; i < fns.length; i++) {
+            fn = fns[i++]
+            fn.apply(this, arguments)
+        }
+    }
+}
+const watcher = new Watcher()
+watcher.listen('chef1', function(id) {
+    manageCommand.execute(null, id)
+})
+watcher.listen('chef2', function(id) {
+    manageCommand.execute(null, id)
+})
+manageCommand.execute(cookingCommand(chef1))
+manageCommand.execute(cookingCommand(chef2))
+manageCommand.execute(cookingCommand(chef1))
+manageCommand.execute(cookingCommand(chef2))
+manageCommand.execute(cookingCommand(chef1))
+manageCommand.execute(cookingCommand(chef2))
 ```
