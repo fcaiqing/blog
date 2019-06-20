@@ -17,10 +17,3 @@
 
 ## JavaScript设计模式
 [目录](https://github.com/fcaiqing/blog/tree/master/JavaScript%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F)
-- 单例模式
-- 策略模式
-- 策略模式
-- 代理模式
-- 迭代器模式
-- 观察者模式
-- 命令模式
