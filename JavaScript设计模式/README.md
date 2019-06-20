@@ -11,6 +11,7 @@
 - [迭代器模式](#迭代器模式)
 - [观察者模式](#观察者模式)
 - [命令模式](#命令模式)
+- [组合模式](#组合模式)
 ### 单例模式
 
 #### 常见实现
@@ -526,3 +527,59 @@ manageCommand.execute(cookingCommand(chef2))
 manageCommand.execute(cookingCommand(chef1))
 manageCommand.execute(cookingCommand(chef2))
 ```
+### 组合模式
+> 组合模式(Composite Pattern)也称部分-整体模式，把一组相似的对象组成树形结构，节点或叶节点都有相同的行为，其中节点可以包含其他节点和叶节点
+
+> 组合模式适用场景
+- 部分-整体分层模型结构，不用关心有多少层级结构
+- 统一处理相似数据模型，不用区分具体是何种类型，统一当做一个节点处理
+>案例：一个公司有8名员工，CEO: 一级部门，level1，三个二级部门level2，市场，技术，商务，这三个部门分别有1,2,1个员工level3，要求打印一张公司员工信息表
+ ```JavaScript
+ /*
+  *                       CEO  (LEVEL1)
+  *                   /      |       \
+  *           Market Technical  Commerce  (LEVEL2)
+  * Employee       1       2        1       (LEVEL3)
+  * 
+  */
+
+class Employee {
+    constructor(name, level, dept) {
+        this.name = name
+        this.level = level
+        this.dept = dept
+        this.subordinate = []   //下属节点
+    }
+    //添加下属
+    add(employee) {
+        if (this.level >= 3) throw new Error('等级不够无法添加员工')
+        this.subordinate.push(employee)
+    }
+    //移除下属
+    remove(employee) {
+        this.subordinate.forEach((e, i) => {
+            if (e === employee) this.subordinate.splice(i, 1)
+        })
+    }
+}
+
+var ceo = new Employee('ceo', 1, 'boss')
+var market = new Employee('dept head', 2, 'market')
+var tech = new Employee('dept head', 2, 'technical')
+var commerce = new Employee('dept head', 2, 'commerce')
+ceo.add(market)
+ceo.add(tech)
+ceo.add(commerce)
+market.add(new Employee('employee', 3, 'market'))
+tech.add(new Employee('employee', 3, 'technical'))
+tech.add(new Employee('employee', 3, 'technical'))
+commerce.add(new Employee('employee', 3, 'commerce'))
+function log(employee) {
+    console.log(`${employee.name} - ${employee.level} - ${employee.dept}`)
+    if (employee.subordinate.length == 0) return
+    employee.subordinate.forEach(e => {
+        log(e)
+    })
+}
+log(ceo)
+ ```
