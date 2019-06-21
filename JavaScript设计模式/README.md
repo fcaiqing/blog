@@ -12,6 +12,7 @@
 - [观察者模式](#观察者模式)
 - [命令模式](#命令模式)
 - [组合模式](#组合模式)
+- [模板模式](#模板方法模式)
 ### 单例模式
 
 #### 常见实现
@@ -583,3 +584,78 @@ function log(employee) {
 }
 log(ceo)
  ```
+### 模板方法模式
+定义一个超类，超类中定义一系列方法，定义了一个模板————封装了完成一个功能、行为的步骤流程，子类根据需要重载超类方法，但是会调用超类模板方法，按照模板规定行为运行
+
+案例1
+
+```JavaScript
+/*
+ *定义一个游戏运行模板，负责运行各种游戏
+ */
+class Game {
+    register() {
+        console.log('角色注册')
+    }
+    initialize() {
+        console.log('初始化游戏')
+    }
+    start() {
+        console.log('开始玩游戏')
+    }
+    end() {
+        console.log('结束游戏')
+    }
+    //模板方法-抽象出不变的流程步骤，每步具体操作可变
+    play() {
+        this.register()
+        this.initialize()
+        this.start()
+        this.end()
+    }
+}
+
+class Card extends Game {
+    constructor(name) {
+        super(name)
+        this.name = name
+    }
+    register() {
+        console.log(`${this.name} - 注册成功`)
+    }
+    initialize() {
+       console.log(`${this.name} - 游戏开始初始化`) 
+    }
+    start() {
+        console.log(`${this.name} - 游戏已经开始`)
+    }
+    end() {
+        console.log(`${this.name} - 游戏已经结束`)
+    }
+}
+
+class Ball extends Game {
+    constructor(name) {
+        super(name)
+        this.name = name
+    }
+    register() {
+        console.log(`${this.name} - 注册成功`)
+    }
+    initialize() {
+       console.log(`${this.name} - 足球游戏开始初始化`) 
+    }
+    start() {
+        console.log(`${this.name} - 足球游戏已经开始`)
+    }
+    end() {
+        console.log(`${this.name} - 足球游戏已经结束`)
+    }
+}
+
+const cardGame = new Card('卡牌游戏')
+cardGame.play()
+
+const ballGame = new Ball('球类游戏')
+ballGame.play()
+```
