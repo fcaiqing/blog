@@ -13,6 +13,7 @@
 - [命令模式](#命令模式)
 - [组合模式](#组合模式)
 - [模板模式](#模板方法模式)
+  - [钩子方法](#钩子方法)
 ### 单例模式
 
 #### 常见实现
@@ -658,4 +659,75 @@ cardGame.play()
 
 const ballGame = new Ball('球类游戏')
 ballGame.play()
+```
+#### 钩子方法
+
+在具体场景应用时，有时需要需要模板方法中封装的流程可以定制化，这时可以使用钩子方法
+
+```JavaScript
+class Game {
+    register() {
+        console.log('角色注册')
+    }
+    //执行注册开关
+    registerSwitch() {
+        return true
+    }
+    initialize() {
+        console.log('初始化游戏')
+    }
+    start() {
+        console.log('开始玩游戏')
+    }
+    end() {
+        console.log('结束游戏')
+    }
+
+    //模板方法-抽象出不变的流程步骤，每步具体操作可变
+    play() {
+        if (this.registerSwitch()) {
+            this.register()
+        }
+        this.initialize()
+        this.start()
+        this.end()
+    }
+}
+//Football游戏不需要注册就可以玩
+class Football extends Game {
+    constructor(name, type) {
+        super(name)
+        this.name = name
+        this.type = type    //游戏是否收费 0：收费 1：免费
+    }
+    register() {
+        console.log(`${this.name} - 注册成功`)
+    }
+    registerSwitch() {
+        let _opt = {
+            
+            0: () => {
+                
+                return true
+            },
+            1: () => {
+                return false
+            }
+        }
+        return _opt[this.type]()
+    }
+    initialize() {
+       console.log(`${this.name} - 足球游戏开始初始化`) 
+    }
+    start() {
+        console.log(`${this.name} - 足球游戏已经开始`)
+    }
+    end() {
+        console.log(`${this.name} - 足球游戏已经结束`)
+    }
+}
+const fb0 = new Football('football0', 0)
+const fb1 = new Football('football1', 1)
+fb0.play()  //需要注册
+fb1.play()  //不需要注册
 ```
