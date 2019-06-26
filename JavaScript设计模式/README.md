@@ -14,6 +14,8 @@
 - [组合模式](#组合模式)
 - [模板模式](#模板方法模式)
   - [钩子方法](#钩子方法)
+- [享元模式](#享元模式)
+  - [对象池](#对象池)
 ### 单例模式
 
 #### 常见实现
@@ -730,4 +732,251 @@ const fb0 = new Football('football0', 0)
 const fb1 = new Football('football1', 1)
 fb0.play()  //需要注册
 fb1.play()  //不需要注册
+```
+### 享元模式
+
+通过减少对象创建数量，以减少内存占用和提高性能。
+
+具体通过分离出内部状态和外部状态来实现
+- 内部状态存储在对象内部，决定创建对象个数，内部状态可以看做对象在内存中的标识符，没有时创建存在时直接返回对象
+- 外部状态和应用场景相关，在需要时传入对象中，可以看做具体业务时的需要的外部数据
+
+案例
+
+> 现在需要绘制1000个图形，其中方形、圆形、椭圆形、三角形各250个，每种类型的颜色、大小均随机
+
+正常实现: 创建了1000个对象去执行绘制操作
+
+```JavaScript
+const DrawTools = {
+    //方形
+    square: function draw(params) {
+        console.log(`方形 - w：${params.w} - h：${params.h} - 
+        颜色：${params.color}`)
+    },
+    //圆形
+    circle: function draw(params) {
+        console.log(`圆形 - 半径：${params.radius} - 
+        颜色：${params.color}`)
+    },
+    //椭圆形
+    ellipse: function draw(params) {
+        console.log(`椭圆形 - a：${params.a} - b：${params.b}- 
+        颜色：${params.color}`)
+    },
+    //三角形
+    triangle: function draw(params) {
+        console.log(`三角形 - x：${params.x} - 
+        y：${params.y} - z：${params.z} - 
+        颜色：${params.color}`)
+    }
+}
+
+function Graphics(type) {
+    this.type = type    //对象初始化时存储，内部状态
+}
+
+Graphics.prototype.draw = function(operator) {
+    operator[this.type](this.params)
+}
+
+Graphics.prototype.setParams = function (params) {
+    this.params = params    //外部状态，具体业务场景时在传入对象的数据
+}
+
+function drawDemo(num = 1000) {
+    let startT = +new Date
+    let aver = num / 4
+    let color = ['blue', 'green', 'yellow', 'white']
+    for (let i = 1; i <= num; i++) {
+        if (i <= aver) {    //画方形
+            let wh = [[10, 2], [2, 4], [7,8]][Math.floor((Math.random()*3))]
+            let square = new Graphics('square')
+            //具体场景数据，不同尺寸、颜色
+            square.setParams({
+                w: wh[0],
+                h: wh[1],
+                color: color[Math.floor(Math.random()*color.length)]
+            })
+            square.draw(DrawTools)
+        }else if (i <= 2 * aver) {    //圆形
+            let radius = [1, 2, 3, 5, 9]
+            let circle = new Graphics('circle')
+            circle.setParams({
+                radius: radius[Math.floor(Math.random()*radius.length)],
+                color: color[Math.floor(Math.random()*color.length)]
+            })
+            circle.draw(DrawTools)
+        }else if (i <= 3 * aver) {    //椭圆形
+            let ab = [[1, 2], [3, 4], [6, 8]][Math.floor((Math.random()*3))]
+            let ellipse = new Graphics('ellipse')
+            ellipse.setParams({
+                a: ab[0],
+                b: ab[1],
+                color: color[Math.floor(Math.random()*color.length)]
+            })
+            ellipse.draw(DrawTools)
+        }else if(i <= 4 * aver) { //三角形
+            let xyz = [[6, 7, 8], [3, 4, 5], [2, 1, 2]]
+            let triangle = new Graphics('triangle')
+            triangle.setParams({
+                x: xyz[0],
+                y: xyz[1],
+                z: xyz[2],
+                color: color[Math.floor(Math.random()*color.length)]
+            })
+            triangle.draw(DrawTools)
+        }
+    }
+    console.log(`用时 - ${new Date - startT}ms`)
+}
+drawDemo()
+```
+享元模式实现：创建了4个对象完成绘制
+- 对象通过工厂函数创建
+- 外部状态在业务需要时，通过特定方法传入对象内部
+
+```JavaScript
+const DrawTools = {
+    //方形
+    square: function draw(params) {
+        console.log(`方形 - w：${params.w} - h：${params.h} - 
+        颜色：${params.color}`)
+    },
+    //圆形
+    circle: function draw(params) {
+        console.log(`圆形 - 半径：${params.radius} - 
+        颜色：${params.color}`)
+    },
+    //椭圆形
+    ellipse: function draw(params) {
+        console.log(`椭圆形 - a：${params.a} - b：${params.b}- 
+        颜色：${params.color}`)
+    },
+    //三角形
+    triangle: function draw(params) {
+        console.log(`三角形 - x：${params.x} - 
+        y：${params.y} - z：${params.z} - 
+        颜色：${params.color}`)
+    }
+}
+
+function Graphics(type) {
+    this.type = type    //内部状态
+}
+
+Graphics.prototype.draw = function(operator) {
+    operator[this.type](this.params)
+}
+
+Graphics.prototype.setParams = function (params) {
+    this.params = params    //外部状态
+}
+
+//工厂函数，内部状态决定对象个数
+var GraphicsFactory = (function () {
+    let _objCache = {}
+    return {
+        create(type) {
+            return _objCache[type] ? _objCache[type] 
+                : (_objCache[type] = new Graphics(type))
+        },
+        getObjCache() {
+            return _objCache
+        }
+    }
+})()
+
+function drawDemo(num = 1000) {
+    let startT = +new Date
+    let aver = num / 4
+    let color = ['blue', 'green', 'yellow', 'white']
+    for (let i = 1; i <= num; i++) {
+        if (i <= aver) {    //画方形
+            let wh = [[10, 2], [2, 4], [7,8]][Math.floor((Math.random()*3))]
+            let square = GraphicsFactory.create('square')
+            //具体场景数据，不同尺寸、颜色
+            square.setParams({
+                w: wh[0],
+                h: wh[1],
+                color: color[Math.floor(Math.random()*color.length)]
+            })
+            square.draw(DrawTools)
+        }else if (i <= 2 * aver) {    //圆形
+            let radius = [1, 2, 3, 5, 9]
+            let circle = GraphicsFactory.create('circle')
+            circle.setParams({
+                radius: radius[Math.floor(Math.random()*radius.length)],
+                color: color[Math.floor(Math.random()*color.length)]
+            })
+            circle.draw(DrawTools)
+        }else if (i <= 3 * aver) {    //椭圆形
+            let ab = [[1, 2], [3, 4], [6, 8]][Math.floor((Math.random()*3))]
+            let ellipse = GraphicsFactory.create('ellipse')
+            ellipse.setParams({
+                a: ab[0],
+                b: ab[1],
+                color: color[Math.floor(Math.random()*color.length)]
+            })
+            ellipse.draw(DrawTools)
+        }else if(i <= 4 * aver) { //三角形
+            let xyz = [[6, 7, 8], [3, 4, 5], [2, 1, 2]]
+            let triangle = GraphicsFactory.create('triangle')
+            triangle.setParams({
+                x: xyz[0],
+                y: xyz[1],
+                z: xyz[2],
+                color: color[Math.floor(Math.random()*color.length)]
+            })
+            triangle.draw(DrawTools)
+        }
+    }
+    console.log(`用时 - ${new Date - startT}ms`)
+}
+drawDemo()
+```
+#### 对象池
+
+同享元模式相似，都是性能优化方案，不过不用分离内部状态和外部状态
+
+对象池维护一个装载空闲对象的内存池，当需要对象完成业务时直接从对象池获取，否则创建新的对象，任务完成后将对象回收到对象池
+
+常见应用如http连接池、数据库连接池，在web中常用来缓存DOM对象，减少DOM节点创建和删除
+
+```JavaScript
+//页面显示5张图，一段时间后更换
+function objectPoolFactory(fn) {
+    let _objectPool = []
+    return {
+        create() {
+            let obj = _objectPool.length == 0 ? fn.apply(null, arguments) 
+                : _objectPool.shift()
+            return obj
+        },
+        recycle(obj) {
+            _objectPool.push(obj)
+        }
+    }
+}
+
+var ImgFactory = objectPoolFactory(() => {
+    let img = document.createElement('img')
+    document.body.appendChild(img)
+    img.onload = () => {
+        ImgFactory.recycle(img) //图片加载完成后回收对象
+    }
+    return img
+})
+
+for (let i = 0; i < 5; i++) {
+    var img = ImgFactory.create()
+    img.src = 'xx'+ i + '.jpg'
+}
+
+setTimeout(() => {
+    for (let i = 0; i < 5; i++) {
+        var img = ImgFactory.create()
+        img.src = 'yy'+ i + '.jpg'
+    }
+}, 5000)
 ```
