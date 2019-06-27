@@ -16,6 +16,8 @@
   - [钩子方法](#钩子方法)
 - [享元模式](#享元模式)
   - [对象池](#对象池)
+- [职责链模式](#职责链模式)
+  - [AOP实现职责链](#AOP实现职责链)
 ### 单例模式
 
 #### 常见实现
@@ -979,4 +981,130 @@ setTimeout(() => {
         img.src = 'yy'+ i + '.jpg'
     }
 }, 5000)
+```
+### 职责链模式
+
+创建了一个处理请求的对象链，请求会沿着链依次传递直到被处理；请求发送者不需要关心接受者，只需将请求发送到链的第一个节点就行，请求发送者和接受者之间进行了解耦
+
+示例：打印日志信息，其中每个日志模块只能打印级别不低于自己的信息，否者交给更低级别模块打印
+
+```JavaScript
+//打印处理模块
+const LogTools = {
+    error: {
+        level: 3,
+        log(message) {
+            console.error(`error - ${message}`)
+        }
+    },
+    warn: {
+        level: 2,
+        log(message) {
+            console.warn(`warn - ${message}`)
+        }
+    },
+    info: {
+        level: 1,
+        log(message) {
+            console.log(`info - ${message}`)
+        }
+    }
+}
+
+//职责链中节点类
+function LogChain(logTool) {
+    this.level = logTool.level  //节点处理日志级别
+    this.log = logTool.log  //处理逻辑
+    this._nextChainNode = null    //下个节点
+}
+
+LogChain.prototype.setNextChainNode = function(chain) {
+    this._nextChainNode = chain
+}
+
+//节点处理请求或是转发请求
+LogChain.prototype.handleRequest = function(level, msg) {
+    'use strict';
+    if (this.level <= level) {
+        //非严格模式下，arguments和函数参数变量引用关联，此时msg会覆盖level；严格模式下非引用关联
+        [].shift.apply(arguments)
+        this.log.apply(this, arguments)
+    }
+    if (this._nextChainNode) {
+        //请求传递
+        this._nextChainNode.handleRequest(level, msg)
+    }
+}
+
+function chainDemo() {
+    let chain = _getChain()
+    chain.handleRequest(1, 'info log message.')
+    chain.handleRequest(2, 'warn log message.')
+    chain.handleRequest(3, 'error log message.')
+
+    //获取职责链
+    function _getChain() {
+        //在业务需要时进行节点组合，业务和功能模块解耦
+        let errorChain = new LogChain(LogTools.error)
+        let warnChain = new LogChain(LogTools.warn)
+        let infoChain = new LogChain(LogTools.info)
+        errorChain.setNextChainNode(warnChain)
+        warnChain.setNextChainNode(infoChain)
+        return errorChain
+    }
+}
+chainDemo()
+// info - info log message.
+// warn - warn log message.
+// info - warn log message.
+// error - error log message.
+// warn - error log message.
+// info - error log message.
+```
+#### AOP实现职责链
+
+结合JavaScript函数式编程的特点，可以很灵活地实现一个职责链，缺点是闭包保存了各级函数的作用域，当链较长时会导致性能问题
+
+```JavaScript
+const LogTools = {
+    error: {
+        level: 3,
+        log(level, message) {
+            if (this.level <= level) {
+                console.error(`error - ${message}`)
+            }
+        }
+    },
+    warn: {
+        level: 2,
+        log(level, message) {
+            if (this.level <= level) {
+                console.warn(`warn - ${message}`)
+            }
+        }
+    },
+    info: {
+        level: 1,
+        log(level, message) {
+            if (this.level <= level) {
+                console.log(`info - ${message}`)
+            }
+        }
+    }
+}
+
+Function.prototype.after = function(logTool) {
+    let _self = this
+    return function(...args) {
+        _self.apply(null, args)
+        logTool.log.apply(logTool, args)
+    }
+}
+
+var logChain = LogTools.error.log.bind(LogTools.error)
+    .after(LogTools.warn).after(LogTools.info)
+
+logChain(1, 'info log msg.')
+logChain(2, 'warn log msg.')
+logChain(3, 'error log msg.')
 ```
