@@ -19,6 +19,7 @@
 - [职责链模式](#职责链模式)
   - [AOP实现职责链](#AOP实现职责链)
 - [中介者模式](#中介者模式)
+- [装饰器模式](#装饰器模式)
 ### 单例模式
 
 #### 常见实现
@@ -1212,4 +1213,80 @@ play4.die()
 // 小李  won
 // 小蔡  won
 // 小白  won
+```
+### 装饰者模式
+
+装饰器模式（Decorator Pattern）允许向一个现有的对象动态添加新的功能，同时又不改变其结构;
+这种模式创建了一个装饰类，用来包装原有的类，并在保持类方法签名完整性的前提下，提供额外功能
+
+#### 模拟传统Java语言实现
+
+```JavaScript
+//画圆类
+function DrawCircle(radius) {
+    this.radius = radius
+}
+
+DrawCircle.prototype.draw = function() {
+    console.log('circle - ', 'radius - ', this.radius)
+}
+
+var circle = new DrawCircle(2)
+circle.draw()   //circle -  radius -  2
+
+//现在需要画圆并且指定颜色
+function DecoratorDrawCircle(drawCircle) {
+    this.drawCircle = drawCircle
+}
+
+//装饰类接口和被装饰类接口保持一致，对用户透明化，用户不感知是否使用了装饰类
+//包装类间可以继续包装，形成包装链
+DecoratorDrawCircle.prototype.draw = function(color) {
+    this.drawCircle.draw()
+    console.log('绘制指定颜色 - ', color)
+}
+
+var circleD = new DecoratorDrawCircle(new DrawCircle(3))
+circleD.draw('red') 
+// circle -  radius -  3
+// 绘制指定颜色 -  red
+```
+#### 装饰器函数
+
+JavaScript中更多的是面向函数，需要在不改变原有函数情况下，动态增加新功能
+
+```JavaScript
+//AOP装饰函数
+Function.prototype.after = function(fn) {
+    let _self = this
+    return function() {
+        _self.apply(this, arguments)    //this会一直传递，不会发生this劫持
+        fn && (fn.apply(this, arguments))
+    }
+}
+
+Function.prototype.before = function(fn) {
+    let _self = this
+    return function() {
+        fn && (fn.apply(this, arguments))
+         _self.apply(this, arguments)
+    }
+}
+
+//公共函数模块
+var  public = function() {
+    console.log('public - ', arguments, this.role)
+}
+
+//扩展功能-执行公共模块前增加操作日志打印
+Log = {
+    role: 'admin',
+    log(action) {
+        console.log('role - ', this.role, 'action - ', action)
+    }
+}
+Log.log = public.before(Log.log)
+Log.log('delete items')
+// role -  admin action -  delete items
+// public - delete items - admin
 ```
