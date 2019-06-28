@@ -18,6 +18,7 @@
   - [对象池](#对象池)
 - [职责链模式](#职责链模式)
   - [AOP实现职责链](#AOP实现职责链)
+- [中介者模式](#中介者模式)
 ### 单例模式
 
 #### 常见实现
@@ -1107,4 +1108,108 @@ var logChain = LogTools.error.log.bind(LogTools.error)
 logChain(1, 'info log msg.')
 logChain(2, 'warn log msg.')
 logChain(3, 'error log msg.')
+```
+### 中介者模式
+
+中介者模式（Mediator Pattern）是用来降低多个对象和类之间的通信复杂性。这种模式提供了一个中介类，该类通常处理不同类之间的通信，它封装了一系列的对象交互，中介者使各对象不需要显式地相互引用，从而使其耦合松散，而且可以独立地改变它们之间的交互。
+
+中介者模式使对象间通信由网状图变为星型图
+![示意图](mediator-pattern-1.png)
+
+示例：4v4红蓝方对局游戏，当一方全部阵亡时，另一方胜利；游戏期间，队员阵亡播报信息通知每个队员
+
+```JavaScript
+//队员类
+function Player(name, teamColor) {
+    this.name = name
+    this.teamColor = teamColor
+    this.state = 'alive'
+}
+//暴露给中介者接口
+Player.prototype.win = function() {
+    console.log(this.name, ' won')
+}
+
+Player.prototype.lose = function() {
+    console.log(this.name, ' lost')
+}
+
+//--------------------------------
+//通知中介者接口
+Player.prototype.die = function() {
+    this.state = 'dead'
+    playerCenter.receiveMsg('playerDead', this)
+}
+
+//工厂类
+function PlayerFactory(name, teamColor) {
+    let player = new Player(name, teamColor)
+    playerCenter.receiveMsg('playerAdd', player) //通知中介者新增队员
+    return player
+}
+
+var playerCenter = (function (){
+    let _player = {} //中介者负责和所有队员交互
+    let _operate = {}   //内部方法
+
+    _operate.playerAdd = function(player) {
+        let teamColor = player.teamColor
+        _player[teamColor] = _player[teamColor] || []
+        _player[teamColor].push(player)
+    }
+
+    _operate.playerDead = function(player) {
+        let teamColor = player.teamColor
+        let allDead = true
+        let teamPlayers = _player[teamColor]
+        allDead = teamPlayers.every(player => {
+            return player.state === 'dead'
+        })
+        if (allDead) {
+            teamPlayers.forEach(player => {
+                player.lose()
+            })
+            Object.keys(_player).forEach(color => {
+                if (color !== teamColor) {
+                    _player[color].forEach(player => {
+                        player.win()
+                    })
+                }
+            })
+        }
+    }
+    //外部方法
+    var receiveMsg = function() {
+        let msgType = [].shift.apply(arguments)
+        _operate[msgType].apply(this, arguments)
+    }
+    return {    //暴露消息接口
+        receiveMsg
+    }
+})()
+
+var play1 = PlayerFactory('老王', 'blue')
+var play2 = PlayerFactory('老李', 'blue')
+var play3 = PlayerFactory('老蔡', 'blue')
+var play4 = PlayerFactory('老白', 'blue')
+
+var play5 = PlayerFactory('小王', 'red')
+var play6 = PlayerFactory('小李', 'red')
+var play7 = PlayerFactory('小蔡', 'red')
+var play8 = PlayerFactory('小白', 'red')
+
+//test
+play1.die()
+play2.die()
+play3.die()
+play4.die()
+//result
+// 老王  lost
+// 老李  lost
+// 老蔡  lost
+// 老白  lost
+// 小王  won
+// 小李  won
+// 小蔡  won
+// 小白  won
 ```
