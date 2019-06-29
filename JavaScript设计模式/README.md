@@ -21,6 +21,8 @@
 - [中介者模式](#中介者模式)
 - [装饰者模式](#装饰者模式)
 - [状态模式](#状态模式)
+- [适配器模式](#适配器模式)
+
 ### 单例模式
 
 #### 常见实现
@@ -1455,4 +1457,41 @@ demo()
 // 关闭
 // 黄光
 //...
+```
+### 适配器模式
+
+适配器模式主要是解决模块间接口不兼容问题，通过包装类使得模块间能够保持一致性
+
+```JavaScript
+//已有模块提供数据发送功能
+const oldModule = {
+    transmit(xml) {
+        //
+    }
+}
+
+//新模块采用新的数据接口发送数据
+const newModule = {
+    send(json) {
+        //
+    }
+}
+
+//适配老模块，保持调用一致性
+const oldModuleAdapter = function(module) {
+    return {
+        send(json) {
+            var xml = jsonToXml(json)
+            return module.transmit.apply(this, [xml])
+        }
+    }
+}
+
+
+function demo() {
+    var json = {name:'xx', age: 10}
+    newModule.send(json)
+    oldModuleAdapter(oldModule).send(json)
+}
+
 ```
