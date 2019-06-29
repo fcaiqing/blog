@@ -20,6 +20,7 @@
   - [AOP实现职责链](#AOP实现职责链)
 - [中介者模式](#中介者模式)
 - [装饰者模式](#装饰者模式)
+- [状态模式](#状态模式)
 ### 单例模式
 
 #### 常见实现
@@ -1289,4 +1290,169 @@ Log.log = public.before(Log.log)
 Log.log('delete items')
 // role -  admin action -  delete items
 // public - delete items - admin
+```
+### 状态模式
+
+允许对象在内部状态发生改变时改变它的行为，对象的行为依赖于它的状态（属性），并且可以根据它的状态改变而改变它的相关行为。
+
+**具体操作**
+
+封装各个状态对象，每个状态对象包含了对应的行为；创建一个context对象，其包含了所有的状态对象，context对象通过切换状态对象将请求委托给当前状态对象来提供不同的行为
+
+示例：现在有一个灯泡，一个按钮，按动按钮灯泡会在黄光-黄白光-白光-关闭间循环
+```JavaScript
+//黄光
+function YellowLight() {
+
+}
+
+YellowLight.prototype.lightUp = function(context) {
+    console.log('黄光')
+    context.setState(context.yellowWhite)
+}
+
+//黄白光
+function YellowWhiteLight() {
+
+}
+
+YellowWhiteLight.prototype.lightUp = function(context) {
+    console.log('黄白光')
+    context.setState(context.white)
+}
+
+//白光
+function WhiteLight() {
+
+}
+
+WhiteLight.prototype.lightUp = function(context) {
+    console.log('白光')
+    context.setState(context.off)
+}
+
+//关闭
+function OffLight() {
+
+}
+
+OffLight.prototype.lightUp = function(context) {
+    console.log('关闭')
+    context.setState(context.yellow)
+}
+
+//定义Context类
+function Context() {
+    this.yellow = new YellowLight()
+    this.yellowWhite = new YellowWhiteLight()
+    this.white = new WhiteLight()
+    this.off = new OffLight()
+    this.curState = null
+}
+
+Context.prototype.setState = function(state) {
+    this.curState = state
+}
+
+Context.prototype.getState = function(state) {
+    return this.curState
+}
+
+function demo() {
+    const context = new Context()
+    context.setState(context.off)
+    let button = document.querySelector('button')
+    button.onclick = function(e) {
+        context.getState().lightUp(context)
+    }
+}
+demo()
+// 关闭
+// 黄光
+// 黄白光
+// 白光
+// 关闭
+// 黄光
+// 黄白光
+// 白光
+// 关闭
+// 黄光
+```
+#### JavaScript中FSM实现
+
+状态模式是状态机实现方式之一，上述示例通过状态机实现，可以减少创建很多状态类，更符合JavaScript实现特点
+
+```JavaScript
+//状态机
+const FSM = {
+    yellow: {
+        lightUp() {
+            console.log('黄光')
+            this.curState = this.yellowWhite
+        }
+    },
+    yellowWhite: {
+        lightUp() {
+            console.log('黄白光')
+            this.curState = this.white
+        }
+    },
+    white: {
+        lightUp() {
+            console.log('白光')
+            this.curState = this.off
+        }
+    },
+    off: {
+        lightUp() {
+            console.log('关闭')
+            this.curState = this.yellow
+        }
+    }
+}
+
+//代理函数
+const delegate = function(context, delegation) {
+    return {
+        lightUp() {
+            return delegation.lightUp.apply(context, arguments)
+        }
+    }
+}
+
+function Context() {
+    //context内状态和状态机状态建立映射关系
+    //delegate函数绑定状态机上下文为context对象
+    this.yellow = delegate(this, FSM.yellow)
+    this.yellowWhite = delegate(this, FSM.yellowWhite)
+    this.white = delegate(this, FSM.white)
+    this.off = delegate(this, FSM.off)
+    this.curState = this.off
+}
+
+Context.prototype.getState = function() {
+    return this.curState
+}
+
+function demo() {
+    const context = new Context()
+    let button = document.querySelector('button')
+    button.onclick = function(e) {
+        context.getState().lightUp()
+    }
+}
+//test
+demo()
+//result
+// 关闭
+// 黄光
+// 黄白光
+// 白光
+// 关闭
+// 黄光
+// 黄白光
+// 白光
+// 关闭
+// 黄光
+//...
 ```
