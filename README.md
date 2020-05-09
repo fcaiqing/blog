@@ -17,3 +17,6 @@
 
 ## JavaScript设计模式
 [目录](https://github.com/fcaiqing/blog/tree/master/JavaScript%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F)
+
+## CommonJS学习笔记
+- [CommonJS规范](./CommonJS)
